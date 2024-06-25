@@ -51,9 +51,17 @@ const messageSchema = new mongoose.Schema({
 
 const Message = mongoose.model('Message', messageSchema);
 
-app.get('/', (req, res) => res.status(200).send('Hello World'));
+app.get('/api/messages/sync', (req, res) => {
+  Message.find((err, data) => {
+    if (err) {
+      res.status(500).send(err);
+    } else {
+      res.status(200).send(data);
+    }
+  });
+});
 
-app.post('/messages/new', (req, res) => {
+app.post('/api/messages/new', (req, res) => {
   const dbMessage = req.body;
 
   Message.create(dbMessage, (err, data) => {
