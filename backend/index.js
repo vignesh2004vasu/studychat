@@ -15,7 +15,6 @@ app.use(express.json());
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  useFindAndModify: false, // Optionally disable deprecated features
 });
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
@@ -37,7 +36,7 @@ db.once('open', () => {
   changeStream.on('change', (change) => {
     if (change.operationType === 'insert') {
       const messageDetails = change.fullDocument;
-      pusher.trigger('messages', 'inserted', {
+      pusher.trigger(`messages-${messageDetails.room}`, 'inserted', {
         username: messageDetails.username,
         message: messageDetails.message,
         timestamp: messageDetails.timestamp,
@@ -51,13 +50,15 @@ const messageSchema = new mongoose.Schema({
   username: String,
   message: String,
   timestamp: String,
+  room: String,
 });
 const Message = mongoose.model('Message', messageSchema);
 
 // Routes
-app.get('/api/messages/sync', async (req, res) => {
+app.get('/api/messages/sync/:room', async (req, res) => {
+  const { room } = req.params;
   try {
-    const messages = await Message.find();
+    const messages = await Message.find({ room });
     res.status(200).json(messages);
   } catch (error) {
     console.error('Error fetching messages:', error);
@@ -66,8 +67,8 @@ app.get('/api/messages/sync', async (req, res) => {
 });
 
 app.post('/api/messages/new', async (req, res) => {
-  const { username, message, timestamp } = req.body;
-  const newMessage = new Message({ username, message, timestamp });
+  const { username, message, timestamp, room } = req.body;
+  const newMessage = new Message({ username, message, timestamp, room });
 
   try {
     const savedMessage = await newMessage.save();
@@ -78,9 +79,10 @@ app.post('/api/messages/new', async (req, res) => {
   }
 });
 
-app.delete('/api/messages/delete-all', async (req, res) => {
+app.delete('/api/messages/delete-all/:room', async (req, res) => {
+  const { room } = req.params;
   try {
-    await Message.deleteMany({});
+    await Message.deleteMany({ room });
     res.status(200).json({ message: 'Chat cleared successfully' });
   } catch (error) {
     console.error('Error clearing chat:', error);

@@ -8,10 +8,11 @@ export default function Home() {
   const [username, setUsername] = useState('');
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [room, setRoom] = useState('maths'); // Default room
 
   const fetchMessages = async () => {
     try {
-      const response = await axios.get(`${BACKEND_URL}/api/messages/sync`);
+      const response = await axios.get(`${BACKEND_URL}/api/messages/sync/${room}`);
       setMessages(response.data);
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -27,7 +28,7 @@ export default function Home() {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
     });
 
-    const channel = pusher.subscribe('messages');
+    const channel = pusher.subscribe(`messages-${room}`);
     channel.bind('inserted', (newMessage) => {
       setMessages((prevMessages) => [...prevMessages, newMessage]);
     });
@@ -37,7 +38,7 @@ export default function Home() {
       channel.unbind_all();
       channel.unsubscribe();
     };
-  }, []);
+  }, [room]); // Re-run effect when room changes
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -47,6 +48,7 @@ export default function Home() {
         username,
         message,
         timestamp: new Date().toISOString(),
+        room,
       });
       setMessage('');
     } catch (error) {
@@ -56,7 +58,7 @@ export default function Home() {
 
   const clearChat = async () => {
     try {
-      await axios.delete(`${BACKEND_URL}/api/messages/delete-all`);
+      await axios.delete(`${BACKEND_URL}/api/messages/delete-all/${room}`);
       setMessages([]);
     } catch (error) {
       console.error('Error clearing chat:', error);
@@ -73,6 +75,17 @@ export default function Home() {
           <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
             Online
           </div>
+        </div>
+        <div className="mt-2">
+          <select
+            value={room}
+            onChange={(e) => setRoom(e.target.value)}
+            className="p-2 border rounded-lg dark:bg-zinc-700 dark:text-white dark:border-zinc-600 text-sm"
+          >
+            <option value="maths">Maths</option>
+            <option value="physics">Physics</option>
+            <option value="chemistry">Chemistry</option>
+          </select>
         </div>
       </div>
       <div className="flex-1 p-3 overflow-y-auto flex flex-col space-y-2" id="chatDisplay">
