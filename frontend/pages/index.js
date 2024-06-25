@@ -10,36 +10,54 @@ export default function Home() {
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    axios.get(`${BACKEND_URL}/api/messages/sync`)
-      .then(response => {
+    // Function to fetch initial messages
+    const fetchMessages = async () => {
+      try {
+        const response = await axios.get(`${BACKEND_URL}/api/messages/sync`);
         setMessages(response.data);
-      });
+      } catch (error) {
+        console.error('Error fetching initial messages:', error);
+      }
+    };
 
+    // Fetch initial messages on component mount
+    fetchMessages();
+
+    // Initialize Pusher
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+      // Add additional configurations if needed
     });
 
+    // Subscribe to Pusher channel
     const channel = pusher.subscribe('messages');
+
+    // Bind to 'inserted' event to receive new messages
     channel.bind('inserted', (newMessage) => {
       setMessages((prevMessages) => [...prevMessages, newMessage]);
     });
 
+    // Clean up function to unsubscribe from Pusher channel
     return () => {
       channel.unbind_all();
       channel.unsubscribe();
     };
-  }, []);
+  }, []); // Dependency array ensures this effect runs only once on mount
 
+  // Function to send a new message
   const sendMessage = async (e) => {
     e.preventDefault();
 
-    await axios.post(`${BACKEND_URL}/api/messages/new`, {
-      username,
-      message,
-      timestamp: new Date().toISOString()
-    });
-
-    setMessage('');
+    try {
+      await axios.post(`${BACKEND_URL}/api/messages/new`, {
+        username,
+        message,
+        timestamp: new Date().toISOString(),
+      });
+      setMessage(''); // Clear message input after sending
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   return (
