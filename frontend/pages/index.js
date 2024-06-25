@@ -9,17 +9,19 @@ export default function Home() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const response = await axios.get(`${BACKEND_URL}/api/messages/sync`);
-        setMessages(response.data);
-      } catch (error) {
-        console.error('Error fetching initial messages:', error);
-      }
-    };
+  const fetchMessages = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/api/messages/sync`);
+      setMessages(response.data);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
 
+  useEffect(() => {
     fetchMessages();
+
+    const intervalId = setInterval(fetchMessages, 2000); // Fetch messages every 2 seconds
 
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
@@ -31,6 +33,7 @@ export default function Home() {
     });
 
     return () => {
+      clearInterval(intervalId);
       channel.unbind_all();
       channel.unsubscribe();
     };
