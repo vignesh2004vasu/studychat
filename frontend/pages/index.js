@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Pusher from 'pusher-js';
 import axios from 'axios';
 
-const BACKEND_URL = 'https://backendchat-tau.vercel.app';
+const BACKEND_URL = 'https://backchat-pi.vercel.app/';
 
 export default function Home() {
   const [username, setUsername] = useState('');
