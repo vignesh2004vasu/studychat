@@ -6,9 +6,11 @@ const BACKEND_URL = 'https://backchat-pi.vercel.app';
 
 export default function Home() {
   const [username, setUsername] = useState('');
+  const [inputName, setInputName] = useState('');
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [room, setRoom] = useState('maths'); // Default room
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const fetchMessages = async () => {
     try {
@@ -20,25 +22,27 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchMessages();
+    if (isLoggedIn) {
+      fetchMessages();
 
-    const intervalId = setInterval(fetchMessages, 2000); // Fetch messages every 2 seconds
+      const intervalId = setInterval(fetchMessages, 2000); // Fetch messages every 2 seconds
 
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-    });
+      const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+      });
 
-    const channel = pusher.subscribe(`messages-${room}`);
-    channel.bind('inserted', (newMessage) => {
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
-    });
+      const channel = pusher.subscribe(`messages-${room}`);
+      channel.bind('inserted', (newMessage) => {
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+      });
 
-    return () => {
-      clearInterval(intervalId);
-      channel.unbind_all();
-      channel.unsubscribe();
-    };
-  }, [room]); // Re-run effect when room changes
+      return () => {
+        clearInterval(intervalId);
+        channel.unbind_all();
+        channel.unsubscribe();
+      };
+    }
+  }, [room, isLoggedIn]); // Re-run effect when room or login state changes
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -65,27 +69,55 @@ export default function Home() {
     }
   };
 
-  return (
-    <div className="h-screen flex flex-col bg-white dark:bg-zinc-800">
-      <div className="px-4 py-3 border-b dark:border-zinc-700">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-zinc-800 dark:text-white">
-            Chat Room
-          </h2>
-          <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-            Online
-          </div>
-        </div>
-        <div className="mt-2">
+  const joinRoom = () => {
+    if (inputName.trim()) {
+      setUsername(inputName.trim());
+      setIsLoggedIn(true);
+    }
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white dark:bg-zinc-800">
+        <div className="w-80 p-4 bg-white dark:bg-zinc-700 rounded-lg shadow-lg">
+          <h2 className="text-lg font-semibold text-zinc-800 dark:text-white mb-4">Join Chat Room</h2>
+          <input
+            type="text"
+            placeholder="Enter your name"
+            className="w-full p-2 mb-4 border rounded-lg dark:bg-zinc-700 dark:text-white dark:border-zinc-600 text-sm"
+            value={inputName}
+            onChange={(e) => setInputName(e.target.value)}
+          />
           <select
             value={room}
             onChange={(e) => setRoom(e.target.value)}
-            className="p-2 border rounded-lg dark:bg-zinc-700 dark:text-white dark:border-zinc-600 text-sm"
+            className="w-full p-2 mb-4 border rounded-lg dark:bg-zinc-700 dark:text-white dark:border-zinc-600 text-sm"
           >
             <option value="maths">Maths</option>
             <option value="physics">Physics</option>
             <option value="chemistry">Chemistry</option>
           </select>
+          <button
+            className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg transition duration-300 ease-in-out text-sm"
+            onClick={joinRoom}
+          >
+            Join Room
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen flex flex-col bg-white dark:bg-zinc-800">
+      <div className="px-4 py-3 border-b dark:border-zinc-700">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-zinc-800 dark:text-white">
+            {room.charAt(0).toUpperCase() + room.slice(1)} Chat Room
+          </h2>
+          <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+            Online
+          </div>
         </div>
       </div>
       <div className="flex-1 p-3 overflow-y-auto flex flex-col space-y-2" id="chatDisplay">
@@ -93,7 +125,7 @@ export default function Home() {
           <div
             key={index}
             className={`chat-message ${
-              msg.username === username ? 'self-end bg-blue-500 text-white' : 'self-start bg-zinc-500 text-white'
+              msg.username === username ? 'self-end bg-blue-500 text-white' : 'self-start bg-gray-300 text-black'
             } max-w-xs rounded-lg px-3 py-1.5 text-sm`}
           >
             <p className="font-bold">{msg.username}</p>
