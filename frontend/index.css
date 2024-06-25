@@ -2,3 +2,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.message {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    max-width: 70%;
+  }
+  
+  .sent {
+    align-self: flex-end;
+    background-color: #DCF8C6; /* Light green for sent messages */
+  }
+  
+  .received {
+    align-self: flex-start;
+    background-color: #E5E5EA; /* Light grey for received messages */
+  }
+  
+  .timestamp {
+    font-size: 12px;
+    color: #999;
+    margin-left: 8px;
+  }
+  

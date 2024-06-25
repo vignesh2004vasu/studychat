@@ -90,9 +90,17 @@ export default function Home() {
       </div>
       <div className="flex-1 p-3 overflow-y-auto flex flex-col space-y-2" id="chatDisplay">
         {messages.map((msg, index) => (
-          <div key={index} className={`chat-message ${msg.username === username ? 'self-end bg-blue-500 text-white' : 'self-start bg-zinc-500 text-white'} max-w-xs rounded-lg px-3 py-1.5 text-sm font-bold`}>
+          <div
+            key={index}
+            className={`chat-message ${
+              msg.username === username ? 'self-end bg-blue-500 text-white' : 'self-start bg-zinc-500 text-white'
+            } max-w-xs rounded-lg px-3 py-1.5 text-sm`}
+          >
+            <p className="font-bold">{msg.username}</p>
             <p>{msg.message}</p>
-            <em>{msg.timestamp}</em>
+            <em className="text-xs">
+              {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </em>
           </div>
         ))}
       </div>
