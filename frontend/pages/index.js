@@ -5,6 +5,7 @@ import axios from 'axios';
 const BACKEND_URL = 'https://backchat-pi.vercel.app';
 
 export default function Home() {
+  // State variables for managing user information, messages, room selection, and login status
   const [username, setUsername] = useState('');
   const [inputName, setInputName] = useState('');
   const [message, setMessage] = useState('');
@@ -13,6 +14,7 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isDarkTheme, setIsDarkTheme] = useState(true); // Theme state
 
+  // Function to fetch messages from the server based on the selected room
   const fetchMessages = async () => {
     try {
       const response = await axios.get(`${BACKEND_URL}/api/messages/sync/${room}`);
@@ -22,21 +24,28 @@ export default function Home() {
     }
   };
 
+  // Effect hook to manage real-time message updates using Pusher
   useEffect(() => {
     if (isLoggedIn) {
-      fetchMessages();
+      fetchMessages(); // Initial fetch
 
+      // Set up interval to fetch messages periodically
       const intervalId = setInterval(fetchMessages, 2000); // Fetch messages every 2 seconds
 
+      // Initialize Pusher with credentials from environment variables
       const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
         cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
       });
 
+      // Subscribe to channel specific to the selected room
       const channel = pusher.subscribe(`messages-${room}`);
+      
+      // Bind to 'inserted' event to update messages when a new message is received
       channel.bind('inserted', (newMessage) => {
         setMessages((prevMessages) => [...prevMessages, newMessage]);
       });
 
+      // Cleanup function to clear interval and unsubscribe from Pusher channel
       return () => {
         clearInterval(intervalId);
         channel.unbind_all();
@@ -45,6 +54,7 @@ export default function Home() {
     }
   }, [room, isLoggedIn]); // Re-run effect when room or login state changes
 
+  // Function to send a new message
   const sendMessage = async (e) => {
     e.preventDefault();
 
@@ -55,38 +65,44 @@ export default function Home() {
         timestamp: new Date().toISOString(),
         room,
       });
-      setMessage('');
+      setMessage(''); // Clear message input after sending
     } catch (error) {
       console.error('Error sending message:', error);
     }
   };
 
+  // Function to clear the entire chat history for the selected room
   const clearChat = async () => {
     try {
       await axios.delete(`${BACKEND_URL}/api/messages/delete-all/${room}`);
-      setMessages([]);
+      setMessages([]); // Clear messages locally after deletion
     } catch (error) {
       console.error('Error clearing chat:', error);
     }
   };
 
+  // Function to handle joining a room with the entered username
   const joinRoom = () => {
     if (inputName.trim()) {
       setUsername(inputName.trim());
-      setIsLoggedIn(true);
+      setIsLoggedIn(true); // Set logged-in state to true after joining
     }
   };
 
+  // Function to switch to a different chat room
   const switchRoom = (newRoom) => {
-    setRoom(newRoom);
+    setRoom(newRoom); // Update selected room state
     fetchMessages(); // Fetch messages for the new room
   };
 
+  // Function to toggle between dark and light themes
   const toggleTheme = () => {
-    setIsDarkTheme((prevTheme) => !prevTheme);
+    setIsDarkTheme((prevTheme) => !prevTheme); // Invert theme state
   };
 
+  // Conditional rendering based on login status
   if (!isLoggedIn) {
+    // Render login form if not logged in
     return (
       <div className="h-screen flex items-center justify-center bg-white dark:bg-zinc-800">
         <div className="w-80 p-4 bg-white dark:bg-zinc-700 rounded-lg shadow-lg">
@@ -118,6 +134,7 @@ export default function Home() {
     );
   }
 
+  // Render chat interface if logged in
   return (
     <div className={`h-screen flex flex-col ${isDarkTheme ? 'bg-zinc-800' : 'bg-white'}`}>
       <div className="px-4 py-3 border-b dark:border-zinc-700">
@@ -128,12 +145,14 @@ export default function Home() {
           <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
             Online
           </div>
+          {/* Toggle switch for theme */}
           <label className="switch ml-4">
             <input type="checkbox" onChange={toggleTheme} checked={!isDarkTheme} />
             <span className="slider"></span>
           </label>
         </div>
         <div className="mt-2">
+          {/* Room selection dropdown */}
           <select
             value={room}
             onChange={(e) => switchRoom(e.target.value)}
@@ -146,6 +165,7 @@ export default function Home() {
         </div>
       </div>
       <div className="flex-1 p-3 overflow-y-auto flex flex-col space-y-2" id="chatDisplay">
+        {/* Render messages dynamically based on user and theme */}
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -162,6 +182,7 @@ export default function Home() {
         ))}
       </div>
       <div className={`px-3 py-2 border-t ${isDarkTheme ? 'dark:border-zinc-700' : 'border-gray-300'}`}>
+        {/* Form to send messages and clear chat button */}
         <form onSubmit={sendMessage} className="flex gap-2">
           <input
             placeholder="Type your message..."
