@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import Pusher from 'pusher-js';
 import axios from 'axios';
 
+const BACKEND_URL = 'https://backendchat-tau.vercel.app';
+
 export default function Home() {
   const [username, setUsername] = useState('');
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    axios.get('/api/messages/sync')
+    axios.get(`${BACKEND_URL}/api/messages/sync`)
       .then(response => {
         setMessages(response.data);
       });
@@ -31,7 +33,7 @@ export default function Home() {
   const sendMessage = async (e) => {
     e.preventDefault();
 
-    await axios.post('/api/messages/new', {
+    await axios.post(`${BACKEND_URL}/api/messages/new`, {
       username,
       message,
       timestamp: new Date().toISOString()
