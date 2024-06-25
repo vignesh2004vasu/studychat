@@ -10,7 +10,6 @@ export default function Home() {
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    // Function to fetch initial messages
     const fetchMessages = async () => {
       try {
         const response = await axios.get(`${BACKEND_URL}/api/messages/sync`);
@@ -20,31 +19,23 @@ export default function Home() {
       }
     };
 
-    // Fetch initial messages on component mount
     fetchMessages();
 
-    // Initialize Pusher
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-      // Add additional configurations if needed
     });
 
-    // Subscribe to Pusher channel
     const channel = pusher.subscribe('messages');
-
-    // Bind to 'inserted' event to receive new messages
     channel.bind('inserted', (newMessage) => {
       setMessages((prevMessages) => [...prevMessages, newMessage]);
     });
 
-    // Clean up function to unsubscribe from Pusher channel
     return () => {
       channel.unbind_all();
       channel.unsubscribe();
     };
-  }, []); // Dependency array ensures this effect runs only once on mount
+  }, []);
 
-  // Function to send a new message
   const sendMessage = async (e) => {
     e.preventDefault();
 
@@ -54,9 +45,18 @@ export default function Home() {
         message,
         timestamp: new Date().toISOString(),
       });
-      setMessage(''); // Clear message input after sending
+      setMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
+    }
+  };
+
+  const clearChat = async () => {
+    try {
+      await axios.delete(`${BACKEND_URL}/api/messages/delete-all`);
+      setMessages([]);
+    } catch (error) {
+      console.error('Error clearing chat:', error);
     }
   };
 
@@ -99,6 +99,12 @@ export default function Home() {
               Send
             </button>
           </form>
+          <button
+            className="mt-3 bg-red-500 hover:bg-red-700 text-white font-bold py-1.5 px-3 rounded-lg transition duration-300 ease-in-out text-sm"
+            onClick={clearChat}
+          >
+            Clear Chat
+          </button>
         </div>
       </div>
     </div>
