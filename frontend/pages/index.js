@@ -11,6 +11,7 @@ export default function Home() {
   const [messages, setMessages] = useState([]);
   const [room, setRoom] = useState('maths'); // Default room
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(true); // Theme state
 
   const fetchMessages = async () => {
     try {
@@ -76,6 +77,15 @@ export default function Home() {
     }
   };
 
+  const switchRoom = (newRoom) => {
+    setRoom(newRoom);
+    fetchMessages(); // Fetch messages for the new room
+  };
+
+  const toggleTheme = () => {
+    setIsDarkTheme((prevTheme) => !prevTheme);
+  };
+
   if (!isLoggedIn) {
     return (
       <div className="h-screen flex items-center justify-center bg-white dark:bg-zinc-800">
@@ -109,15 +119,30 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-zinc-800">
+    <div className={`h-screen flex flex-col ${isDarkTheme ? 'bg-zinc-800' : 'bg-white'}`}>
       <div className="px-4 py-3 border-b dark:border-zinc-700">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-zinc-800 dark:text-white">
+          <h2 className={`text-lg font-semibold ${isDarkTheme ? 'text-white' : 'text-zinc-800'}`}>
             {room.charAt(0).toUpperCase() + room.slice(1)} Chat Room
           </h2>
           <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
             Online
           </div>
+          <label className="switch ml-4">
+            <input type="checkbox" onChange={toggleTheme} checked={!isDarkTheme} />
+            <span className="slider"></span>
+          </label>
+        </div>
+        <div className="mt-2">
+          <select
+            value={room}
+            onChange={(e) => switchRoom(e.target.value)}
+            className={`p-2 border rounded-lg ${isDarkTheme ? 'dark:bg-zinc-700 dark:text-white dark:border-zinc-600' : 'bg-white text-black border-gray-300'} text-sm`}
+          >
+            <option value="maths">Maths</option>
+            <option value="physics">Physics</option>
+            <option value="chemistry">Chemistry</option>
+          </select>
         </div>
       </div>
       <div className="flex-1 p-3 overflow-y-auto flex flex-col space-y-2" id="chatDisplay">
@@ -125,7 +150,7 @@ export default function Home() {
           <div
             key={index}
             className={`chat-message ${
-              msg.username === username ? 'self-end bg-blue-500 text-white' : 'self-start bg-gray-300 text-black'
+              msg.username === username ? 'self-end bg-blue-500 text-white' : `self-start ${isDarkTheme ? 'bg-gray-700 text-white' : 'bg-gray-300 text-black'}`
             } max-w-xs rounded-lg px-3 py-1.5 text-sm`}
           >
             <p className="font-bold">{msg.username}</p>
@@ -136,11 +161,11 @@ export default function Home() {
           </div>
         ))}
       </div>
-      <div className="px-3 py-2 border-t dark:border-zinc-700">
+      <div className={`px-3 py-2 border-t ${isDarkTheme ? 'dark:border-zinc-700' : 'border-gray-300'}`}>
         <form onSubmit={sendMessage} className="flex gap-2">
           <input
             placeholder="Type your message..."
-            className="flex-1 p-2 border rounded-lg dark:bg-zinc-700 dark:text-white dark:border-zinc-600 text-sm"
+            className={`flex-1 p-2 border rounded-lg ${isDarkTheme ? 'dark:bg-zinc-700 dark:text-white dark:border-zinc-600' : 'bg-white text-black border-gray-300'} text-sm`}
             id="chatInput"
             type="text"
             value={message}
