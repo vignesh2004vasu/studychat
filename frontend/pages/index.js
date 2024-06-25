@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import './index.css'; // Example path, adjust as per your project structure
+import '../index.css'; // Example path, adjust as per your project structure
 
 const BACKEND_URL = 'https://backendchat-tau.vercel.app'; // Replace with your backend URL
 
